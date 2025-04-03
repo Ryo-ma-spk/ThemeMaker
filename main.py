@@ -79,6 +79,7 @@ async def theme(interaction: Interaction):
 @tasks.loop(minutes=1)
 async def check_reminders():
     now = datetime.now()
+    print(f"🔄 リマインドチェック実行中: {now.strftime('%Y-%m-%d %H:%M:%S')}")
 
     try:
         records = reminder_sheet.get_all_records()
@@ -126,6 +127,7 @@ async def on_ready():
         print("✅ Slash commands synced!")
         if not check_reminders.is_running():
             check_reminders.start()
+            print("⏰ リマインダー通知ループを開始しました")
     except Exception as e:
         print(f"❌ Failed to sync commands: {e}")
 
@@ -142,8 +144,5 @@ def home():
 # ▶️ 実行（Flaskがメイン、Botはスレッドで起動）
 # ======================
 if __name__ == "__main__":
-    # Discord Bot をバックグラウンドで起動
     threading.Thread(target=lambda: bot.run(config.DISCORD_TOKEN)).start()
-
-    # Flask (Renderでの起動維持用)
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
