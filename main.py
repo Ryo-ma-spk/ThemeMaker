@@ -147,8 +147,10 @@ def run_flask():
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
 
 if __name__ == "__main__":
-    # Flaskをバックグラウンド（スレッド）で起動
-    threading.Thread(target=run_flask).start()
+    # Flaskをバックグラウンドで起動（安定のため少し待機）
+    threading.Thread(target=run_flask, daemon=True).start()
+    import time
+    time.sleep(5)  # Flaskの初期化を少し待つ（5秒間）
 
-    # Discord Botをメインスレッドで起動
+    # メインスレッドでDiscord Bot起動
     bot.run(config.DISCORD_TOKEN)
