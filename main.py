@@ -141,8 +141,15 @@ def home():
     return "Bot is running!"
 
 # ======================
-# ▶️ 実行（Flaskがメイン、Botはスレッドで起動）
+# ▶️ 実行（Flaskを先に別スレッドで起動 → bot.runをメインで起動）
 # ======================
-if __name__ == "__main__":
-    threading.Thread(target=lambda: bot.run(config.DISCORD_TOKEN)).start()
+def run_flask():
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
+
+if __name__ == "__main__":
+    # Flask をバックグラウンドで起動
+    flask_thread = threading.Thread(target=run_flask)
+    flask_thread.start()
+
+    # Discord Bot をメインスレッドで起動（安定性が高い）
+    bot.run(config.DISCORD_TOKEN)
