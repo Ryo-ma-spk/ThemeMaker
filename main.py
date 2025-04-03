@@ -5,9 +5,6 @@ from datetime import datetime, timedelta
 import random
 import config
 from sheets.connector import reminder_sheet, theme_sheet
-import os
-from flask import Flask
-import threading
 
 # ======================
 # 🤖 Bot本体の設定
@@ -79,7 +76,6 @@ async def theme(interaction: Interaction):
 @tasks.loop(minutes=1)
 async def check_reminders():
     now = datetime.now()
-    print(f"🔄 リマインドチェック実行中: {now.strftime('%Y-%m-%d %H:%M:%S')}")
 
     try:
         records = reminder_sheet.get_all_records()
@@ -132,25 +128,7 @@ async def on_ready():
         print(f"❌ Failed to sync commands: {e}")
 
 # ======================
-# 🌐 Flaskサーバー (Render用)
-# ======================
-app = Flask(__name__)
-
-@app.route("/")
-def home():
-    return "Bot is running!"
-
-# ======================
 # ▶️ 実行
 # ======================
-def run_flask():
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
-
 if __name__ == "__main__":
-    # Flaskをバックグラウンドで起動（安定のため少し待機）
-    threading.Thread(target=run_flask, daemon=True).start()
-    import time
-    time.sleep(5)  # Flaskの初期化を少し待つ（5秒間）
-
-    # メインスレッドでDiscord Bot起動
     bot.run(config.DISCORD_TOKEN)
