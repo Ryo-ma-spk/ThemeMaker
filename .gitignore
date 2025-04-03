@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# 仮想環境
+venv/
+env/
+myenv/
+
+# 環境設定ファイル
+.env
+bot-key.json
+
+# macOS
+.DS_Store
+
+# VSCodeなど
+.vscode/
