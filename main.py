@@ -39,7 +39,6 @@ async def remind(interaction: Interaction, date: str, message: str):
         formatted = dt.strftime("%Y-%m-%d %H:%M:%S")
         channel_id = str(interaction.channel.id)
 
-        # カラム順: datetime, message, channel_id, is_sent
         reminder_sheet.append_row([formatted, message, channel_id, "FALSE"])
 
         await interaction.response.send_message(
@@ -60,7 +59,7 @@ async def theme(interaction: Interaction):
 
     try:
         rows = theme_sheet.get_all_values()
-        columns = list(zip(*rows[1:]))  # ヘッダーを除く
+        columns = list(zip(*rows[1:]))
 
         a_column = [cell for cell in columns[0] if cell.strip()]
         b_column = [cell for cell in columns[1] if cell.strip()]
@@ -71,7 +70,6 @@ async def theme(interaction: Interaction):
         random_c = random.choice(c_column)
 
         await interaction.followup.send(f"ランダムなお題：\n1: {random_a}\n2: {random_b}\n3: {random_c}")
-
     except Exception as e:
         await interaction.followup.send(f"❌ お題の取得に失敗しました: {e}")
 
@@ -126,7 +124,8 @@ async def on_ready():
     try:
         await tree.sync()
         print("✅ Slash commands synced!")
-        check_reminders.start()
+        if not check_reminders.is_running():
+            check_reminders.start()
     except Exception as e:
         print(f"❌ Failed to sync commands: {e}")
 
@@ -140,11 +139,11 @@ def home():
     return "Bot is running!"
 
 # ======================
-# ▶️ 実行
+# ▶️ 実行（Flaskがメイン、Botはスレッドで起動）
 # ======================
 if __name__ == "__main__":
-    # Flaskを別スレッドで起動してRender対応
-    threading.Thread(target=lambda: app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))).start()
+    # Discord Bot をバックグラウンドで起動
+    threading.Thread(target=lambda: bot.run(config.DISCORD_TOKEN)).start()
 
-    # Discord Bot起動
-    bot.run(config.DISCORD_TOKEN)
+    # Flask (Renderでの起動維持用)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
