@@ -79,7 +79,6 @@ async def theme(interaction: Interaction):
 @tasks.loop(minutes=1)
 async def check_reminders():
     now = datetime.now()
-    print(f"🔄 リマインドチェック実行中: {now.strftime('%Y-%m-%d %H:%M:%S')}")
 
     try:
         records = reminder_sheet.get_all_records()
