@@ -5,6 +5,9 @@ from datetime import datetime, timedelta
 import random
 import config
 from sheets.connector import reminder_sheet, theme_sheet
+import os
+from flask import Flask
+import threading
 
 # ======================
 # 🤖 Bot本体の設定
@@ -15,17 +18,11 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 tree = bot.tree
 
 # ======================
-# 🔐 Google Sheets認証設定
-# ======================
-
-# connector.pyで管理
-
-# ======================
 # 📅 /remind コマンド
 # ======================
 @tree.command(name="remind", description="指定日時にリマインダーを登録します")
 @app_commands.describe(
-    date="日時を YYYY/MM/DD HH:MM 形式で入力（例: 2025/04/05 21:00）",
+    date="日時を YYYY/MM/DD HH:MM 形式で入力（例: 2025/04/01 10:00）",
     message="通知内容"
 )
 async def remind(interaction: Interaction, date: str, message: str):
@@ -134,7 +131,20 @@ async def on_ready():
         print(f"❌ Failed to sync commands: {e}")
 
 # ======================
+# 🌐 Flaskサーバー (Render用)
+# ======================
+app = Flask(__name__)
+
+@app.route("/")
+def home():
+    return "Bot is running!"
+
+# ======================
 # ▶️ 実行
 # ======================
 if __name__ == "__main__":
+    # Flaskを別スレッドで起動してRender対応
+    threading.Thread(target=lambda: app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))).start()
+
+    # Discord Bot起動
     bot.run(config.DISCORD_TOKEN)
