@@ -144,7 +144,7 @@ def home():
 # ▶️ 実行
 # ======================
 def run_flask():
-    app.run(host="0.0.0.0", port=8080)  # Koyebはポート固定
+    app.run(host="0.0.0.0", port=8000)  # Koyebはポート固定
 
 if __name__ == "__main__":
     threading.Thread(target=run_flask, daemon=True).start()
