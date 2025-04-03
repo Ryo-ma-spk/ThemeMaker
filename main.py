@@ -1,10 +1,9 @@
-import discord
-from discord.ext import commands, tasks
-from discord import app_commands
-from discord import Interaction
-from datetime import datetime, timedelta
 import random
 import config
+import discord
+from discord.ext import commands, tasks
+from discord import app_commands, Interaction
+from datetime import datetime, timedelta
 from sheets.connector import reminder_sheet, theme_sheet
 import os
 from flask import Flask
