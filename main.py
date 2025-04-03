@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands, tasks
-from discord import app_commands, Interaction
+from discord import app_commands
+from discord import Interaction
 from datetime import datetime, timedelta
 import random
 import config
