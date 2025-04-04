@@ -1,9 +1,9 @@
-import random
-import config
 import discord
 from discord.ext import commands, tasks
 from discord import app_commands, Interaction
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+import random
+import config
 from sheets.connector import reminder_sheet, theme_sheet
 import os
 from flask import Flask
@@ -18,7 +18,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 tree = bot.tree
 
 # ======================
-# 📅 /remind コマンド
+# 🗕️ /remind コマンド
 # ======================
 @tree.command(name="remind", description="指定日時にリマインダーを登録します")
 @app_commands.describe(
@@ -42,7 +42,7 @@ async def remind(interaction: Interaction, date: str, message: str):
         reminder_sheet.append_row([formatted, message, channel_id, "FALSE"])
 
         await interaction.response.send_message(
-            f"✅ リマインダーを登録しました！\n📅 {formatted}\n📝 {message}"
+            f"✅ リマインダーを登録しました！\n🗕️ {formatted}\n📝 {message}"
         )
 
     except ValueError:
@@ -78,7 +78,8 @@ async def theme(interaction: Interaction):
 # ======================
 @tasks.loop(minutes=1)
 async def check_reminders():
-    now = datetime.now()
+    now = datetime.now(timezone(timedelta(hours=9)))  # JST
+    print(f"🔄 リマインドチェック実行中 (JST): {now.strftime('%Y-%m-%d %H:%M:%S')}")
 
     try:
         records = reminder_sheet.get_all_records()
@@ -133,7 +134,6 @@ async def on_ready():
 # ======================
 # 🌐 Flask ルート (Koyeb対応)
 # ======================
-from flask import Flask
 app = Flask(__name__)
 
 @app.route("/")
@@ -144,7 +144,7 @@ def home():
 # ▶️ 実行
 # ======================
 def run_flask():
-    app.run(host="0.0.0.0", port=8000)  # Koyebはポート固定
+    app.run(host="0.0.0.0", port=8000)
 
 if __name__ == "__main__":
     threading.Thread(target=run_flask, daemon=True).start()
