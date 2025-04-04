@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
-KEY_PATH = os.getenv("BOT_KEY_PATH", "/bot-key.json")
+KEY_PATH = "/bot-key.json"
 
 creds = Credentials.from_service_account_file(KEY_PATH, scopes=SCOPES)
 gc = gspread.authorize(creds)
