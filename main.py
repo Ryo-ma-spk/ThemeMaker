@@ -110,7 +110,7 @@ async def check_reminders():
                     formatted_jst = reminder_time.strftime("%Y-%m-%d %H:%M:%S")
                     bot_name = bot.user.name
                     await channel.send(
-                        f"@everyone\n🔔 {bot_name}からのお知らせ！\n📝 「{row['message']}」（{formatted_jst}）"
+                        f"@everyone\n🔔 {bot_name}からのお知らせ！\n📝 {row['message']}（{formatted_jst}）"
                     )
                     reminder_sheet.update_cell(idx, 4, "TRUE")
                 else:
