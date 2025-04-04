@@ -18,7 +18,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 tree = bot.tree
 
 # ======================
-# 🗕️ /remind コマンド
+# 📅 /remind コマンド
 # ======================
 @tree.command(name="remind", description="指定日時にリマインダーを登録します")
 @app_commands.describe(
@@ -28,7 +28,7 @@ tree = bot.tree
 async def remind(interaction: Interaction, date: str, message: str):
     try:
         dt = datetime.strptime(date, "%Y/%m/%d %H:%M")
-        now = datetime.now().replace(microsecond=0)
+        now = datetime.now()
 
         if dt < now:
             await interaction.response.send_message(
@@ -42,7 +42,7 @@ async def remind(interaction: Interaction, date: str, message: str):
         reminder_sheet.append_row([formatted, message, channel_id, "FALSE"])
 
         await interaction.response.send_message(
-            f"✅ リマインダーを登録しました！\n🗕️ {formatted}\n📝 {message}"
+            f"✅ リマインダーを登録しました！\n📅 {formatted}\n📝 {message}"
         )
 
     except ValueError:
@@ -78,8 +78,9 @@ async def theme(interaction: Interaction):
 # ======================
 @tasks.loop(minutes=1)
 async def check_reminders():
-    now = datetime.now(timezone(timedelta(hours=9)))  # JST
-    print(f"🔄 リマインドチェック実行中 (JST): {now.strftime('%Y-%m-%d %H:%M:%S')}")
+    jst = timezone(timedelta(hours=9))
+    now = datetime.now(jst)
+    print(f"🔄 リマインドチェック実行中（JST）: {now.strftime('%Y-%m-%d %H:%M:%S')}")
 
     try:
         records = reminder_sheet.get_all_records()
@@ -92,7 +93,7 @@ async def check_reminders():
             continue
 
         try:
-            reminder_time = datetime.strptime(row["datetime"], "%Y-%m-%d %H:%M:%S")
+            reminder_time = datetime.strptime(row["datetime"], "%Y-%m-%d %H:%M:%S").replace(tzinfo=jst)
         except ValueError:
             print(f"⚠️ 無効な日付形式: {row['datetime']}")
             continue
@@ -106,9 +107,10 @@ async def check_reminders():
                 channel = bot.get_channel(channel_id)
 
                 if channel:
+                    formatted_jst = reminder_time.strftime("%Y-%m-%d %H:%M:%S")
                     bot_name = bot.user.name
                     await channel.send(
-                        f"@everyone\n🔔 {bot_name}からのお知らせ！\n📝 「{row['message']}」（{row['datetime']}）"
+                        f"@everyone\n🔔 {bot_name}からのお知らせ！\n📝 「{row['message']}」（{formatted_jst}）"
                     )
                     reminder_sheet.update_cell(idx, 4, "TRUE")
                 else:
@@ -144,7 +146,7 @@ def home():
 # ▶️ 実行
 # ======================
 def run_flask():
-    app.run(host="0.0.0.0", port=8000)
+    app.run(host="0.0.0.0", port=8000)  # Koyeb用
 
 if __name__ == "__main__":
     threading.Thread(target=run_flask, daemon=True).start()
