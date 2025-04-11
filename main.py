@@ -27,8 +27,9 @@ tree = bot.tree
 )
 async def remind(interaction: Interaction, date: str, message: str):
     try:
-        dt = datetime.strptime(date, "%Y/%m/%d %H:%M")
-        now = datetime.now()
+        jst = timezone(timedelta(hours=9))
+        dt = datetime.strptime(date, "%Y/%m/%d %H:%M").replace(tzinfo=jst)
+        now = datetime.now(jst)
 
         if dt < now:
             await interaction.response.send_message(
@@ -39,7 +40,11 @@ async def remind(interaction: Interaction, date: str, message: str):
         formatted = dt.strftime("%Y-%m-%d %H:%M:%S")
         channel_id = str(interaction.channel.id)
 
-        reminder_sheet.append_row([formatted, message, channel_id, "FALSE"])
+        try:
+            reminder_sheet.append_row([formatted, message, channel_id, "FALSE"])
+        except Exception as e:
+            await interaction.response.send_message(f"❌ リマインダー登録中にエラー: {e}")
+            return
 
         await interaction.response.send_message(
             f"✅ リマインダーを登録しました！\n📅 {formatted}\n📝 {message}"
@@ -84,14 +89,15 @@ async def check_reminders():
 
     try:
         records = reminder_sheet.get_all_records()
+        unsent_reminders = [
+            (idx, row) for idx, row in enumerate(records, start=2)
+            if row["is_sent"].strip().upper() != "TRUE"
+        ]
     except Exception as e:
         print(f"❌ Google Sheets 読み込み失敗: {e}")
         return
 
-    for idx, row in enumerate(records, start=2):
-        if row["is_sent"] == "TRUE":
-            continue
-
+    for idx, row in unsent_reminders:
         try:
             reminder_time = datetime.strptime(row["datetime"], "%Y-%m-%d %H:%M:%S").replace(tzinfo=jst)
         except ValueError:
@@ -99,22 +105,26 @@ async def check_reminders():
             continue
 
         notify_time = reminder_time - timedelta(minutes=5)
-        diff = abs((notify_time - now).total_seconds())
+        time_diff = (notify_time - now).total_seconds()
 
-        if diff <= 60:
+        if 0 <= time_diff <= 60:
             try:
                 channel_id = int(row["channel_id"])
                 channel = bot.get_channel(channel_id)
 
-                if channel:
-                    formatted_jst = reminder_time.strftime("%Y-%m-%d %H:%M:%S")
-                    bot_name = bot.user.name
-                    await channel.send(
-                        f"@everyone\n🔔 {bot_name}からのお知らせ！\n📝 {row['message']}（{formatted_jst}）"
-                    )
-                    reminder_sheet.update_cell(idx, 4, "TRUE")
-                else:
-                    print(f"❌ チャンネルID {channel_id} が見つかりません")
+                if channel is None:
+                    try:
+                        channel = await bot.fetch_channel(channel_id)
+                    except Exception:
+                        print(f"❌ fetch_channel でもチャンネル取得失敗: {channel_id}")
+                        continue
+
+                formatted_jst = reminder_time.strftime("%Y-%m-%d %H:%M:%S")
+                bot_name = bot.user.name
+                await channel.send(
+                    f"@everyone\n🔔 {bot_name}からのお知らせ！\n📝 {row['message']}（{formatted_jst}）"
+                )
+                reminder_sheet.update_cell(idx, 4, "TRUE")
             except Exception as e:
                 print(f"❌ 通知中にエラー発生: {e}")
 
@@ -142,12 +152,15 @@ app = Flask(__name__)
 def home():
     return "Bot is running!"
 
+def run_flask():
+    try:
+        app.run(host="0.0.0.0", port=8000)
+    except Exception as e:
+        print(f"❌ Flaskサーバー起動エラー: {e}")
+
 # ======================
 # ▶️ 実行
 # ======================
-def run_flask():
-    app.run(host="0.0.0.0", port=8000)  # Koyeb用
-
 if __name__ == "__main__":
     threading.Thread(target=run_flask, daemon=True).start()
-    bot.run(config.DISCORD_TOKEN)
+    bot.run(os.environ.get("DISCORD_TOKEN", config.DISCORD_TOKEN))
